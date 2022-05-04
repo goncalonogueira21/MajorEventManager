@@ -1,0 +1,46 @@
+﻿@page "/"
+
+@using MEM2.Config
+@using MEM2.Services
+@using MEM2.Data
+@using MEM2.Data.MEM2
+@using System.Diagnostics
+
+@inject MEM2.Services.IToastService toastService
+
+@inherits OwningComponentBase<EventoService>
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+<AuthorizeView>
+    <!-- Show this section if the user is logged in -->
+    <Authorized>
+
+        <button class="btn btn-info" @onclick="@(()=> toastService.ShowInfo("I'm an INFO message"))">Info Toast</button>
+        <button class="btn btn-success" @onclick="@(()=> toastService.ShowSuccess("I'm a Success message"))">Success Toast</button>
+        <button class="btn btn-warning" @onclick="@(()=> toastService.ShowWarning("I'm a Warning message"))">Warning Toast</button>
+        <button class="btn btn-danger" @onclick="@(()=> toastService.ShowError("I'm a Error message"))">Error Toast</button>
+    </Authorized>
+    <!-- Show this section if the user is not logged in -->
+</AuthorizeView>
+
+
+
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    Boolean on;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var user = (await authenticationStateTask).User;
+        // on = Service.ScheduleAction(user.Identity.Name).Result;
+
+
+    }
+
+}

@@ -1,0 +1,114 @@
+﻿@page "/EventoDetails/{Id}"
+
+@using MEM2.Data
+@using MEM2.Data.MEM2
+@using System.Diagnostics
+
+@inherits OwningComponentBase<EventoService>
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h1> @Evento.Titulo </h1>
+
+<div class="div_l">
+<p><em><b>Descrição:</b> @Evento.Descricao</em></p>
+<p><em><b>Categoria:</b> @Evento.Categoria </em></p>
+<p><em><b>Inicio:</b> @Evento.Inicio</em></p>
+<p><em><b>Fim:</b> @Evento.Fim</em></p>
+</div>
+
+
+
+
+
+<div class="div_r" id="map" style="height: 700px;width:900px;">  </div>
+
+<AuthorizeView>
+    <!-- Show this section if the user is logged in -->
+    <Authorized>
+        @if (on)
+        {
+            <button class="btn btn-outline-dark btn-lg " @onclick="FollowFunction">Unfollow</button>
+        }
+        else
+        {
+            <button class="btn btn-outline-dark btn-lg  " @onclick="FollowFunction">Follow</button>
+        }
+
+
+    </Authorized>
+    <!-- Show this section if the user is not logged in -->
+</AuthorizeView>
+
+<style>
+    .div_r {
+        float: right;
+        
+    }
+
+    .button{
+        float:left;
+    }
+
+    .div_l {
+        font-family: Lato;
+        overflow-wrap: break-word;
+        width: 40em;
+        float: left;
+    }
+
+
+</style>
+
+@code{
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+
+    [Parameter]
+    public string Id { get; set; }
+
+    Evento Evento = new Evento();
+
+    private bool load = false;
+    Boolean on;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Evento = await @Service.GetEvento(int.Parse(Id));
+        load = true;
+
+        var user = (await authenticationStateTask).User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            bool On = Service.IsFollowing(user.Identity.Name, Evento.Id);
+            on = On;
+        }
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+
+        if (load)
+        {
+            await JS.InvokeVoidAsync("loadBingMap", Evento.Latitude, Evento.Longitude);
+            load = false;
+        }
+
+
+    }
+
+
+
+    protected async Task FollowFunction()
+    {
+
+        var user = (await authenticationStateTask).User;
+        Service.SetSeguido(user.Identity.Name, Evento.Id, on);
+        on = !on;
+    }
+}

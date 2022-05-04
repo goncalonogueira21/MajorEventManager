@@ -1,0 +1,162 @@
+﻿@page "/fetchEventos"
+@using MEM2.Data
+@using MEM2.Data.MEM2
+
+<h1> Eventos </h1>
+
+@inherits OwningComponentBase<EventoService>
+
+@if (Eventos == null)
+{
+    <!-- Show this if the current user has no data... yet... -->
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    <input class="search" placeholder="Search.." @bind-value="SearchTerm" @bind-value:event="oninput" />
+
+    <span class="text-muted ml-5 ">
+        Showing @filteredEventos.Count out of @Eventos.Count
+    </span>
+
+    foreach (var Evento in Eventos)
+    {
+        if (Categorias.Contains(Evento.Categoria)) { } else { Categorias.Add(Evento.Categoria); }
+    }
+
+<select class="RbtnMargin" @bind="SearchTerm">
+
+    <option  value="">All</option>
+
+    @foreach (var Categoria in Categorias)
+    {
+        <option class="" value="@Categoria">@Categoria </option>
+    }
+</select>
+
+
+
+    <AuthorizeView>
+        <!-- Show this section if the user is logged in -->
+        <Authorized>
+
+            @if (on)
+            {
+                <button class="btn btn-outline-dark RbtnMargin " @onclick="FollowListMK">All</button>
+            }
+            else
+            {
+                <button class="btn btn-outline-dark RbtnMargin  " @onclick="FollowListMK">Followed</button>
+            }
+
+
+        </Authorized>
+        <!-- Show this section if the user is not logged in -->
+    </AuthorizeView>
+
+    
+
+    if (on) {
+<ul>
+    <div class="card-columns TopMargin">
+        @foreach (var Evento in filteredEventosSeguidos)
+        {
+            <div class="card bg-light mb-3" style="height: 12rem;">
+                <div class="card-header text-white bg-primary">Event</div>
+                <div class="card-body">
+                    <h5 class="card-title">@Evento.Titulo</h5>
+                    <a href="/EventoDetails/@Evento.Id" class="card-link">Link</a>
+                </div>
+            </div>
+        }
+    </div>
+</ul>} else {
+<ul>
+    <div class="card-columns TopMargin">
+        @foreach (var Evento in filteredEventos)
+        {
+         <div class="card bg-light mb-3" style="height: 12rem;" >
+             <div class="card-header text-white bg-primary">Event</div>
+                  <div class="card-body">
+                       <h5 class="card-title">@Evento.Titulo</h5>
+                       <a href="/EventoDetails/@Evento.Id" class="card-link">Link</a>
+             </div>
+         </div>
+        }
+    </div>
+</ul>}
+    
+
+}
+
+<style>
+    .RbtnMargin {
+        margin-left: 20px;
+    }
+
+    .TopMargin {
+        margin-top: 40px;
+    }
+
+    .search {
+        width: 308.9999999999999px;
+        height: 35.976653696498005px;
+        font-family: Arial;
+        font-size: 14.0px;
+        font-weight: 400;
+        color: #000000;
+        background-color: #FFFFFF;
+        border: 1px solid #C8C8C8;
+        border-radius: 0px;
+        padding-left: 5px;
+    }
+</style>
+
+@code {
+
+    private string Termo;
+
+    // AuthenticationState is available as a CascadingParameter
+    [CascadingParameter]
+    private Task<AuthenticationState>
+authenticationStateTask
+    { get; set; }
+    List<Evento> Eventos;
+    protected override async Task OnInitializedAsync()
+    {
+        Eventos = await @Service.GetEventosAsync();
+    }
+
+    async Task SearchEventos()
+    {
+        Eventos = await Service.GetEventosAsyncFilter(Termo);
+
+    }
+
+    // Initialize SearchTerm to "" to prevent null's
+    string SearchTerm { get; set; } = "";
+    string SearchCategoria { get; set; } = "Categoria";
+    string SearchSeguidos { get; set; } = "";
+
+
+    // Imagine this was retrieved from an API, just hardcoding for demo purposes
+
+    List<Evento> SeguidosEventos = new List<Evento>();
+
+    List<Evento> filteredEventos => Eventos.Where(i => (i.Titulo.ToLower().Contains(SearchTerm.ToLower()) || i.Categoria.ToLower().Contains(SearchTerm.ToLower()))).ToList();
+
+    List<string> Categorias = new List<string>();
+
+    Boolean on = false;
+
+    List<Evento> filteredEventosSeguidos => SeguidosEventos.Where(i => (i.Titulo.ToLower().Contains(SearchTerm.ToLower()) || i.Categoria.ToLower().Contains(SearchTerm.ToLower()))).ToList();
+
+    protected async Task FollowListMK()
+    {
+        var user = (await authenticationStateTask).User;
+        SeguidosEventos = await Service.GetListIdSeguido(user.Identity.Name);
+        on = !on;
+    }
+
+}
